@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { getComplaint, submitFeedback } from '../services/api';
+import { getComplaint, submitFeedback, escalateComplaint } from '../services/api';
 import toast from 'react-hot-toast';
 import {
   Search, MapPin, Tag, Calendar, Clock, Image as ImageIcon,
   Users, User, Phone, ChevronDown, ChevronUp, Zap, CheckCircle, Star,
-  Mail, ShieldCheck, Wrench, FileText, Info, BadgeCheck, AlertCircle
+  Mail, ShieldCheck, Wrench, FileText, Info, BadgeCheck, AlertCircle, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
@@ -26,7 +26,7 @@ const FeedbackSection = ({ complaint, onSubmitted }) => {
     setLoading(true);
     try {
       await submitFeedback(complaint._id, {
-        reporterContact: 'anonymous', // In real app, get from user session
+        reporterContact: complaint.reporters?.[0]?.name || 'Citizen',
         rating,
         comment
       });
@@ -147,6 +147,75 @@ const ReporterList = ({ reporters }) => {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+};
+
+/* ── Escalate Section ─────────────────────────────────────────────────── */
+const EscalateSection = ({ complaint, onSubmitted }) => {
+  const [reason, setReason] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  if (complaint.isEscalated) {
+    return (
+      <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-5 flex items-start gap-4">
+        <div className="p-2 bg-red-500/20 rounded-xl shrink-0 mt-0.5">
+          <AlertTriangle className="w-5 h-5 text-red-400" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-red-400 mb-1">Escalated to Higher Authority</p>
+          <p className="text-sm text-gray-300 leading-relaxed">
+            This issue has been escalated. Reason: <span className="font-semibold text-white">{complaint.escalationReason}</span>
+          </p>
+          <p className="text-xs text-gray-400 mt-2">Higher authorities are currently reviewing this complaint.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const handleEscalate = async () => {
+    if (!reason.trim()) {
+      toast.error('Please provide a reason for escalation');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await escalateComplaint(complaint._id, reason);
+      if (res.success) {
+        toast.success('Complaint escalated successfully');
+        setReason('');
+        onSubmitted();
+      }
+    } catch {
+      toast.error('Failed to escalate complaint');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-gray-800/40 border border-gray-700/60 rounded-2xl p-5 space-y-4">
+      <div className="flex items-center gap-2 mb-2">
+        <AlertTriangle className="w-5 h-5 text-amber-500" />
+        <h4 className="text-sm font-bold text-white uppercase tracking-wider">Escalate Issue</h4>
+      </div>
+      <p className="text-xs text-gray-400">
+        If this complaint has not been resolved properly or has been pending for too long, you can escalate it to a higher authority.
+      </p>
+      <textarea
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+        placeholder="Reason for escalation..."
+        rows={2}
+        className="w-full bg-gray-900 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all resize-none"
+      />
+      <button
+        onClick={handleEscalate}
+        disabled={loading || !reason.trim()}
+        className="bg-red-600 hover:bg-red-500 disabled:bg-gray-600 text-white text-sm font-bold px-6 py-2.5 rounded-xl transition-colors shadow-lg shadow-red-500/20"
+      >
+        {loading ? 'Escalating...' : 'Escalate to Higher Authority'}
+      </button>
     </div>
   );
 };
@@ -416,6 +485,18 @@ const TrackComplaint = () => {
               </motion.div>
             )}
 
+            {/* Resolved Image */}
+            {complaint.status === 'Resolved' && complaint.resolvedImageUrl && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }} className="border-t border-gray-700/50 pt-8">
+                <p className="text-xs text-emerald-500 uppercase tracking-widest font-bold mb-4 flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4" /> Resolution Evidence
+                </p>
+                <div className="overflow-hidden rounded-3xl border border-gray-700 shadow-2xl max-w-2xl bg-gray-900">
+                  <img src={complaint.resolvedImageUrl} alt="Resolution Evidence" className="w-full object-cover max-h-[480px] hover:scale-105 transition-transform duration-700" />
+                </div>
+              </motion.div>
+            )}
+
             {/* Feedback for Resolved Complaints */}
             {complaint.status === 'Resolved' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="border-t border-gray-700/50 pt-8">
@@ -441,6 +522,11 @@ const TrackComplaint = () => {
                 <FeedbackSection complaint={complaint} onSubmitted={() => fetchComplaintById(complaintId)} />
               </motion.div>
             )}
+
+            {/* Escalate Section */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }} className="border-t border-gray-700/50 pt-8">
+              <EscalateSection complaint={complaint} onSubmitted={() => fetchComplaintById(complaintId)} />
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

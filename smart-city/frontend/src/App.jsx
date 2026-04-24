@@ -7,7 +7,7 @@ import SubmitComplaint from './pages/SubmitComplaint';
 import TrackComplaint from './pages/TrackComplaint';
 import AdminDashboard from './pages/AdminDashboard';
 import DepartmentPortal from './pages/DepartmentPortal';
-import { Building2, PlusCircle, Search, LayoutDashboard, Heart, BriefcaseBusiness } from 'lucide-react';
+import { Building2, PlusCircle, Search, LayoutDashboard, Heart, BriefcaseBusiness, Phone, Mail, Facebook, Youtube, Instagram, Linkedin } from 'lucide-react';
 import { pageVariants, pageTransition, buttonTap } from './animations/variants';
 
 /* ── Animated page wrapper ── */
@@ -33,30 +33,18 @@ const NAV_TABS = [
 
 const NavigationToggle = () => {
   const location = useLocation();
-  const navigate = useNavigate();
-
   return (
-    <div className="flex bg-gray-900/60 p-1.5 rounded-full border border-gray-700/60 backdrop-blur-md shadow-inner">
-      {NAV_TABS.map(({ path, label, icon: Icon }) => {
+    <div className="flex items-center gap-6">
+      {NAV_TABS.map(({ path, label }) => {
         const isActive = location.pathname === path;
         return (
-          <button
+          <Link
             key={path}
-            onClick={() => navigate(path)}
-            className={`relative flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-colors duration-200 z-10
-              ${isActive ? 'text-white' : 'text-gray-500 hover:text-gray-200'}`}
+            to={path}
+            className={`text-sm font-semibold transition-colors duration-200 ${isActive ? 'text-white border-b-2 border-white pb-1' : 'text-gray-300 hover:text-white'}`}
           >
-            {/* Sliding pill indicator */}
-            {isActive && (
-              <motion.div
-                layoutId="nav-pill"
-                className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full -z-10 shadow-lg shadow-blue-500/30"
-                transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-              />
-            )}
-            <Icon className="w-4 h-4 shrink-0" />
-            <span className="hidden sm:inline">{label}</span>
-          </button>
+            {label}
+          </Link>
         );
       })}
     </div>
@@ -97,60 +85,56 @@ const AnimatedRoutes = () => {
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-[#080c14] text-gray-100 antialiased selection:bg-emerald-500/25 selection:text-emerald-200 overflow-x-hidden">
+      <div className="min-h-screen bg-white text-gray-900 antialiased selection:bg-orange-500/25 selection:text-orange-800 overflow-x-hidden flex flex-col">
 
-        {/* Global ambient background glows */}
-        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-          {/* Primary orbs */}
-          <div className="absolute top-[-20%] left-[-15%] w-[60%] h-[60%] rounded-full bg-blue-900/20 blur-[180px]" />
-          <div className="absolute bottom-[-20%] right-[-15%] w-[55%] h-[55%] rounded-full bg-emerald-900/15 blur-[180px]" />
-          {/* Accent orbs */}
-          <div className="absolute top-[35%] right-[15%] w-[25%] h-[25%] rounded-full bg-violet-900/12 blur-[130px]" />
-          <div className="absolute top-[60%] left-[10%] w-[20%] h-[20%] rounded-full bg-cyan-900/10 blur-[110px]" />
-          <div className="absolute top-[10%] right-[30%] w-[15%] h-[15%] rounded-full bg-amber-900/8 blur-[100px]" />
-          {/* Subtle vignette */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.4)_100%)]" />
-        </div>
-
-        {/* Sticky navigation bar */}
-        <nav className="border-b border-gray-800/80 bg-gray-900/60 backdrop-blur-xl sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-3 group">
-              <motion.div
-                whileHover={{ rotate: [0, -8, 8, 0] }}
-                transition={{ duration: 0.4 }}
-                className="p-2 bg-blue-500/10 rounded-xl border border-blue-500/20 group-hover:bg-blue-500/20 transition-colors"
-              >
-                <Building2 className="w-7 h-7 text-cyan-400" />
-              </motion.div>
-              <div>
-                <span className="text-2xl font-extrabold bg-gradient-to-r from-cyan-200 to-sky-400 bg-clip-text text-transparent tracking-tight">
-                  CivicPulse
-                </span>
-                <p className="text-xs text-cyan-200/80 mt-1">
-                  AI-powered civic issue response
-                </p>
+        {/* Top Bar (White) */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <Link to="/" className="flex items-center gap-3">
+              <div className="p-2 border-2 border-gray-900 rounded-lg">
+                <Building2 className="w-6 h-6 text-gray-900" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold text-gray-900 leading-none">CivicPulse</span>
+                <span className="text-[10px] font-semibold text-gray-600 uppercase tracking-widest mt-1">Issue Resolution Agency</span>
               </div>
             </Link>
+            
+            <div className="flex items-center gap-6 text-sm text-gray-600 font-medium">
+              <span className="flex items-center gap-2"><Phone className="w-4 h-4" /> (845) 334-0120</span>
+              <span className="flex items-center gap-2"><Mail className="w-4 h-4" /> info@civicpulse.com</span>
+              <div className="flex items-center gap-3 ml-4">
+                <div className="p-1.5 bg-[#1e3a5f] rounded text-white cursor-pointer hover:bg-[#152842] transition-colors"><Facebook className="w-4 h-4" /></div>
+                <div className="p-1.5 bg-[#1e3a5f] rounded text-white cursor-pointer hover:bg-[#152842] transition-colors"><Youtube className="w-4 h-4" /></div>
+                <div className="p-1.5 bg-[#1e3a5f] rounded text-white cursor-pointer hover:bg-[#152842] transition-colors"><Instagram className="w-4 h-4" /></div>
+                <div className="p-1.5 bg-[#1e3a5f] rounded text-white cursor-pointer hover:bg-[#152842] transition-colors"><Linkedin className="w-4 h-4" /></div>
+              </div>
+            </div>
+          </div>
+        </div>
 
+        {/* Nav Bar (Dark Blue) */}
+        <nav className="bg-[#1e3a5f] sticky top-0 z-50 shadow-md">
+          <div className="max-w-7xl mx-auto px-6 py-4 flex justify-start items-center gap-8 overflow-x-auto">
+            <Link to="/" className={`text-sm font-semibold px-3 py-1 rounded bg-white text-[#1e3a5f]`}>Home</Link>
             <NavigationToggle />
           </div>
         </nav>
 
         {/* Page content */}
-        <main className="max-w-7xl mx-auto px-4 py-12 relative z-10 min-h-[calc(100vh-160px)]">
+        <main className="flex-1 w-full bg-white relative z-10">
           <AnimatedRoutes />
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-gray-800/80 bg-gray-900/40 backdrop-blur-md relative z-10 py-6">
-          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-gray-400 text-sm font-medium">
-              © {new Date().getFullYear()} CivicPulse — smarter civic issue management
-            </p>
-            <p className="text-gray-400 text-sm font-medium flex items-center gap-1.5">
-              Built with <Heart className="w-4 h-4 text-rose-500" /> for citizens and city teams
+        <footer className="bg-[#1e3a5f] text-white py-12 mt-auto">
+          <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-3">
+              <Building2 className="w-8 h-8 text-white" />
+              <span className="text-2xl font-bold tracking-tight">CivicPulse</span>
+            </div>
+            <p className="text-gray-300 text-sm">
+              © {new Date().getFullYear()} CivicPulse. All rights reserved.
             </p>
           </div>
         </footer>

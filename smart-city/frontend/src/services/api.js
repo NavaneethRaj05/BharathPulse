@@ -14,6 +14,11 @@ export const submitFeedback = async (complaintId, feedbackData) => {
   return response.data;
 };
 
+export const escalateComplaint = async (complaintId, reason) => {
+  const response = await axios.post(`${API_URL}/${complaintId}/escalate`, { reason });
+  return response.data;
+};
+
 export const getComplaint = async (id) => {
   const response = await axios.get(`${API_URL}/${id}`);
   return response.data;
@@ -25,8 +30,11 @@ export const getComplaints = async (params = {}) => {
 };
 
 export const updateComplaintStatus = async (id, payload) => {
-  const body = typeof payload === 'string' ? { status: payload } : payload;
-  const response = await axios.put(`${API_URL}/${id}`, body);
+  let config = {};
+  if (payload instanceof FormData) {
+    config.headers = { 'Content-Type': 'multipart/form-data' };
+  }
+  const response = await axios.put(`${API_URL}/${id}`, payload, config);
   return response.data;
 };
 

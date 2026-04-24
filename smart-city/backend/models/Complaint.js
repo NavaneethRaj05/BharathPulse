@@ -162,6 +162,18 @@ const complaintSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    resolvedImageUrl: {
+      type: String,
+      default: '',
+    },
+    isEscalated: {
+      type: Boolean,
+      default: false,
+    },
+    escalationReason: {
+      type: String,
+      default: '',
+    },
     resolutionDate: {
       type: Date,
       default: null,

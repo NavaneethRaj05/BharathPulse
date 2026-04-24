@@ -6,6 +6,7 @@ const {
   detectFakeComplaint,
 } = require('../utils/similarity');
 const { hasCloudinary } = require('../config/cloudinary');
+const { sendStatusUpdateEmail } = require('../utils/mailer');
 
 // Department mapping based on category
 const DEPARTMENT_MAPPING = {
@@ -178,15 +179,34 @@ const getComplaint = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 const updateComplaintStatus = async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, resolution } = req.body;
+    
+    // Check if there is an uploaded image
+    const resolvedImageUrl = (req.file && hasCloudinary && req.file.path) ? req.file.path : undefined;
+    
+    const updateData = { status };
+    if (resolution !== undefined) updateData.resolution = resolution;
+    if (resolvedImageUrl !== undefined) updateData.resolvedImageUrl = resolvedImageUrl;
+    if (status === 'Resolved' && !req.body.resolvedAt) updateData.resolvedAt = new Date();
+
     const complaint = await Complaint.findByIdAndUpdate(
       req.params.id,
-      { status },
+      updateData,
       { new: true, runValidators: true }
     );
     if (!complaint) {
       return res.status(404).json({ success: false, error: 'Complaint not found' });
     }
+
+    // Send email notification to all reporters
+    if (complaint.reporters && complaint.reporters.length > 0) {
+      complaint.reporters.forEach(reporter => {
+        if (reporter.contact) {
+          sendStatusUpdateEmail(reporter.contact, complaint, status);
+        }
+      });
+    }
+
     res.status(200).json({ success: true, data: complaint });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });

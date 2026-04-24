@@ -6,6 +6,7 @@ const {
   updateComplaintStatus,
   getStats,
   submitFeedback,
+  escalateComplaint,
   getLocations,
 } = require('../controllers/complaintControllerV2');
 const { upload } = require('../config/cloudinary');
@@ -22,8 +23,9 @@ router.route('/')
 
 router.route('/:id')
   .get(getComplaint)
-  .put(updateComplaintStatus);
+  .put(upload.single('resolvedImage'), updateComplaintStatus);
 
 router.post('/:id/feedback', submitFeedback);
+router.post('/:id/escalate', escalateComplaint);
 
 module.exports = router;

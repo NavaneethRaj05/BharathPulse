@@ -605,25 +605,6 @@ const SubmitComplaint = () => {
 
       {/* Floating AI assistant buttons — compact pill style */}
       <div className="fixed bottom-6 right-5 z-40 flex flex-col items-end gap-2.5">
-        {/* AI Enhancer FAB */}
-        <motion.button
-          type="button"
-          onClick={() => { setEnhancerOpen((prev) => !prev); setFaqOpen(false); }}
-          title="AI Complaint Enhancer"
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.93 }}
-          className={`group flex items-center gap-2 pl-2.5 pr-3.5 py-2 rounded-full shadow-lg transition-all duration-200 ${
-            enhancerOpen
-              ? 'bg-cyan-500 shadow-cyan-500/40'
-              : 'bg-gray-800/90 border border-cyan-500/40 hover:bg-cyan-600/80 hover:border-cyan-400 shadow-gray-900/50'
-          }`}
-        >
-          <span className="w-6 h-6 flex items-center justify-center rounded-full bg-cyan-500/20 group-hover:bg-cyan-500/30 transition-colors">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
-          </span>
-          <span className="text-xs font-semibold text-cyan-200 tracking-wide">Enhancer</span>
-        </motion.button>
-
         {/* FAQ Chatbot FAB */}
         <motion.button
           type="button"
@@ -644,55 +625,7 @@ const SubmitComplaint = () => {
         </motion.button>
       </div>
 
-      <AnimatePresence>
-        {enhancerOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="fixed bottom-24 right-6 z-40 w-[min(26rem,calc(100vw-2rem))] bg-gray-900/95 border border-cyan-500/30 rounded-3xl p-5 shadow-2xl backdrop-blur-xl"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <p className="flex items-center gap-2 text-sm font-bold text-cyan-300 uppercase tracking-wider">
-                <Bot className="w-4 h-4" /> AI Complaint Enhancer
-              </p>
-              <button type="button" onClick={() => setEnhancerOpen(false)} className="text-gray-400 hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <textarea
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              rows={3}
-              placeholder="Example: There is a huge pothole near MG Road signal causing accidents."
-              className="w-full bg-gray-900 border border-gray-600 rounded-2xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all resize-none font-medium"
-            />
-            <div className="flex items-center gap-3 mt-3">
-              <button
-                type="button"
-                onClick={handleChatAssist}
-                disabled={chatLoading}
-                className="px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-600 text-white font-bold rounded-2xl transition-all"
-              >
-                {chatLoading ? 'Analyzing...' : 'Autofill Form'}
-              </button>
-              {chatReply && <span className="text-xs text-cyan-300 line-clamp-2">{chatReply}</span>}
-            </div>
-            {chatParsed && (
-              <div className="grid grid-cols-2 gap-2 text-xs mt-3">
-                <div className="bg-gray-800/90 border border-gray-700 rounded-xl p-2.5">
-                  <p className="text-gray-500 uppercase tracking-wider mb-1">Category</p>
-                  <p className="text-cyan-200 font-medium">{chatParsed.category || 'General'}</p>
-                </div>
-                <div className="bg-gray-800/90 border border-gray-700 rounded-xl p-2.5">
-                  <p className="text-gray-500 uppercase tracking-wider mb-1">Priority</p>
-                  <p className="text-cyan-200 font-medium">{chatParsed.priority || 'Normal'}</p>
-                </div>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+
 
       <AnimatePresence>
         {faqOpen && (

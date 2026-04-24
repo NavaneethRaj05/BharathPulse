@@ -8,6 +8,7 @@ const {
 } = require('../utils/similarity');
 const { hasCloudinary } = require('../config/cloudinary');
 const { sendStatusNotification } = require('../utils/notificationService');
+const { sendStatusUpdateEmail } = require('../utils/mailer');
 
 const DEPARTMENT_MAPPING = {
   Sanitation: 'Public Health & Sanitation Department',
@@ -54,10 +55,9 @@ const createComplaint = async (req, res) => {
 
     const openComplaints = isDbConnected()
       ? await Complaint.find({
-          status: { $in: ['Pending', 'In Progress'] },
           category,
         }).lean()
-      : inMemoryComplaints.filter((c) => c.category === category && ['Pending', 'In Progress'].includes(c.status));
+      : inMemoryComplaints.filter((c) => c.category === category);
 
     const incoming = { title, description, category, location };
     let bestMatch = null;
@@ -253,6 +253,12 @@ const updateComplaintStatus = async (req, res) => {
 
     complaint.status = status;
     complaint.updatedByDept = true;
+    
+    // Check if an image was uploaded
+    if (req.file && hasCloudinary && req.file.path) {
+      complaint.resolvedImageUrl = req.file.path;
+    }
+    
     if (resolution) complaint.resolution = resolution;
     if (status === 'Resolved') complaint.resolutionDate = new Date();
     complaint.statusHistory.push({ status, note: resolution || `Status changed to ${status}`, changedBy });
@@ -264,6 +270,15 @@ const updateComplaintStatus = async (req, res) => {
 
     await sendStatusNotification(complaint);
     emitComplaintUpdate(complaint);
+
+    // Send Email Notification
+    if (complaint.reporters && complaint.reporters.length > 0) {
+      for (const r of complaint.reporters) {
+        if (r.contact) {
+          sendStatusUpdateEmail(r.contact, complaint, status);
+        }
+      }
+    }
 
     return res.status(200).json({ success: true, data: complaint });
   } catch (error) {
@@ -332,6 +347,31 @@ const submitFeedback = async (req, res) => {
   }
 };
 
+const escalateComplaint = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    const complaint = isDbConnected()
+      ? await Complaint.findById(id)
+      : inMemoryComplaints.find((c) => c._id === id);
+      
+    if (!complaint) return res.status(404).json({ success: false, error: 'Complaint not found' });
+    if (complaint.isEscalated) return res.status(400).json({ success: false, error: 'Already escalated' });
+
+    complaint.isEscalated = true;
+    complaint.escalationReason = reason || 'No reason provided';
+    complaint.statusHistory.push({ status: complaint.status, note: `Escalated to Higher Authority: ${complaint.escalationReason}`, changedBy: 'citizen', changedAt: new Date() });
+    
+    if (isDbConnected()) await complaint.save();
+    
+    emitComplaintUpdate(complaint);
+    return res.status(200).json({ success: true, message: 'Complaint escalated successfully', data: complaint });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 module.exports = {
   createComplaint,
   getComplaints,
@@ -339,6 +379,7 @@ module.exports = {
   updateComplaintStatus,
   getStats,
   submitFeedback,
+  escalateComplaint,
   setSocket,
   getLocations,
 };

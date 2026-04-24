@@ -347,8 +347,8 @@ const DepartmentPortal = () => {
 
             <div className="bg-gray-800/70 border border-gray-700/60 rounded-[2rem] overflow-hidden shadow-xl">
               {/* Table header */}
-              <div className="grid grid-cols-[2fr_1fr_1fr_2fr_auto] gap-4 px-6 py-3 bg-gray-900/70 border-b border-gray-700/60">
-                {['Complaint', 'Category', 'Status', 'Resolution Note', 'Save'].map((h) => (
+              <div className="grid grid-cols-[2fr_1fr_1fr_2fr] gap-4 px-6 py-3 bg-gray-900/70 border-b border-gray-700/60">
+                {['Complaint', 'Category', 'Status', 'Resolution Note'].map((h) => (
                   <p key={h} className="text-xs font-bold text-gray-500 uppercase tracking-wider">{h}</p>
                 ))}
               </div>
@@ -378,7 +378,7 @@ const DepartmentPortal = () => {
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: idx * 0.03 }}
-                        className="grid grid-cols-[2fr_1fr_1fr_2fr_auto] gap-4 px-6 py-4 items-center hover:bg-gray-800/30 transition-colors group"
+                        className="grid grid-cols-[2fr_1fr_1fr_2fr] gap-4 px-6 py-4 items-center hover:bg-gray-800/30 transition-colors group"
                       >
                         {/* Title + code */}
                         <div className="min-w-0">
@@ -396,49 +396,14 @@ const DepartmentPortal = () => {
                         </div>
 
                         {/* Status select */}
-                        <select
-                          id={`status-${complaint._id}`}
-                          defaultValue={complaint.status}
-                          onChange={(e) => handleUpdate(complaint._id, e.target.value)}
-                          disabled={savingId === complaint._id}
-                          className="bg-gray-900 border border-gray-600 rounded-xl px-3 py-2 text-white text-xs font-semibold focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 disabled:opacity-50 transition-all"
-                        >
-                          <option value="Pending">Pending</option>
-                          <option value="In Progress">In Progress</option>
-                          <option value="Resolved">Resolved</option>
-                        </select>
-
-                        {/* Resolution note */}
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            placeholder="Add resolution details…"
-                            value={resolutionMap[complaint._id] || ''}
-                            onChange={(e) => setResolutionMap((prev) => ({ ...prev, [complaint._id]: e.target.value }))}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                const statusEl = document.getElementById(`status-${complaint._id}`);
-                                handleUpdate(complaint._id, statusEl?.value || complaint.status);
-                              }
-                            }}
-                            className="flex-1 bg-gray-900/80 border border-gray-600 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/20 transition-all min-w-0"
-                          />
+                        <div className="w-fit">
+                          <StatusBadge status={complaint.status} size="sm" />
                         </div>
 
-                        {/* Save button */}
-                        <button
-                          onClick={() => {
-                            const statusEl = document.getElementById(`status-${complaint._id}`);
-                            handleUpdate(complaint._id, statusEl?.value || complaint.status);
-                          }}
-                          disabled={savingId === complaint._id}
-                          className="p-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-600 rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center transition-all shrink-0"
-                          title="Save changes"
-                        >
-                          {savingId === complaint._id
-                            ? <Loader2 className="w-4 h-4 text-white animate-spin" />
-                            : <CheckCircle2 className="w-4 h-4 text-white" />}
-                        </button>
+                        {/* Resolution note */}
+                        <div className="text-xs text-gray-300 italic truncate max-w-md" title={complaint.resolution || 'No resolution note provided yet.'}>
+                          {complaint.resolution || <span className="text-gray-500">No resolution note provided yet.</span>}
+                        </div>
                       </motion.div>
                     );
                   })}

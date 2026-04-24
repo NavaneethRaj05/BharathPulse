@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import {
   LayoutDashboard, Filter, CheckCircle2, Clock, AlertCircle,
   Lock, ShieldCheck, RefreshCw, Users, ChevronDown, ChevronUp,
-  User, Phone, Zap, TrendingUp
+  User, Phone, Zap, TrendingUp, Star, Image as ImageIcon, Upload, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { staggerContainer, staggerItem, buttonTap, shakeVariants, fadeInUp } from '../animations/variants';
@@ -100,6 +100,53 @@ const ReporterDropdown = ({ reporters }) => {
   );
 };
 
+/* ─── Inline feedback list for a row ───────────────────────────────── */
+const FeedbackDropdown = ({ feedback, averageRating }) => {
+  const [open, setOpen] = useState(false);
+  if (!feedback || feedback.length === 0) return <span className="text-gray-600 text-xs">—</span>;
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/20 rounded-full text-xs font-bold transition-colors"
+      >
+        <Star className="w-3.5 h-3.5" />
+        {averageRating ? averageRating.toFixed(1) : 'N/A'} ({feedback.length})
+        {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className="absolute left-0 top-9 z-50 bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl w-64 overflow-hidden"
+          >
+            <div className="p-2 border-b border-gray-700 text-xs text-gray-500 font-bold uppercase tracking-wider px-4 py-2.5">
+              Citizen Feedback
+            </div>
+            {feedback.map((f, i) => (
+              <div key={i} className="flex flex-col gap-1 px-4 py-3 hover:bg-gray-700/50 transition-colors border-b border-gray-700/50 last:border-0">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-400 truncate max-w-[120px]" title={f.reporterContact}>{f.reporterContact}</span>
+                  <span className="flex items-center text-yellow-400 text-xs font-bold gap-0.5">
+                    {f.rating} <Star className="w-3 h-3 fill-current" />
+                  </span>
+                </div>
+                {f.comment && <p className="text-sm text-gray-200 mt-1">{f.comment}</p>}
+                <p className="text-[10px] text-gray-500 mt-1">{new Date(f.submittedAt).toLocaleDateString()}</p>
+              </div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 /* ─── Stat card ─────────────────────────────────────────────────────── */
 const StatCard = ({ icon: Icon, iconBg, iconColor, label, value }) => (
   <motion.div variants={staggerItem}
@@ -126,6 +173,7 @@ const AdminDashboard = () => {
   const [updatingId, setUpdatingId] = useState(null);
   const [resolutionMap, setResolutionMap] = useState({});
   const [statusDraftMap, setStatusDraftMap] = useState({});
+  const [imageMap, setImageMap] = useState({});
 
   const fetchComplaints = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true);
@@ -159,11 +207,24 @@ const AdminDashboard = () => {
     }
     setUpdatingId(id);
     try {
-      const res = await updateComplaintStatus(id, { status: newStatus, resolution, changedBy: 'admin' });
+      let payload;
+      const file = imageMap[id];
+      if (file) {
+        payload = new FormData();
+        payload.append('status', newStatus);
+        payload.append('resolution', resolution);
+        payload.append('changedBy', 'admin');
+        payload.append('resolvedImage', file);
+      } else {
+        payload = { status: newStatus, resolution, changedBy: 'admin' };
+      }
+
+      const res = await updateComplaintStatus(id, payload);
       if (res.success) {
         toast.success(`Saved update: ${newStatus}`);
         setComplaints(prev => prev.map(c => c._id === id ? { ...c, ...res.data } : c));
         setResolutionMap((prev) => ({ ...prev, [id]: res.data?.resolution || resolution }));
+        setImageMap(prev => { const nm = {...prev}; delete nm[id]; return nm; });
         fetchStats();
       }
     } catch { toast.error('Failed to update status'); }
@@ -281,9 +342,19 @@ const AdminDashboard = () => {
                       className="border-b border-gray-700/40 hover:bg-gray-700/20 transition-colors group"
                     >
                       {/* Title */}
-                      <td className="p-5 max-w-xs">
-                        <div className="font-bold text-white mb-1 truncate group-hover:text-blue-300 transition-colors" title={c.title}>
-                          {c.title}
+                      <td className="p-5 max-w-xs relative">
+                        {c.isEscalated && (
+                          <div className="absolute top-0 left-0 w-1 h-full bg-red-500 rounded-r-full" />
+                        )}
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="font-bold text-white truncate group-hover:text-blue-300 transition-colors" title={c.title}>
+                            {c.title}
+                          </div>
+                          {c.isEscalated && (
+                            <span className="flex items-center gap-1 bg-red-500/10 text-red-400 text-[10px] font-bold px-2 py-0.5 rounded border border-red-500/20 whitespace-nowrap" title={`Escalated: ${c.escalationReason}`}>
+                              <AlertTriangle className="w-3 h-3" /> ESCALATED
+                            </span>
+                          )}
                         </div>
                         <code className="text-xs text-gray-500 bg-gray-900/60 px-2 py-0.5 rounded">
                           {c._id.slice(0, 14)}…
@@ -322,12 +393,7 @@ const AdminDashboard = () => {
 
                       {/* Feedback summary */}
                       <td className="p-5">
-                        <div className="text-xs text-gray-300 space-y-1">
-                          <p>{c.feedback?.length || 0} feedback(s)</p>
-                          <p className="text-yellow-400 font-semibold">
-                            Avg: {c.averageRating ? c.averageRating.toFixed(1) : 'N/A'}
-                          </p>
-                        </div>
+                        <FeedbackDropdown feedback={c.feedback} averageRating={c.averageRating} />
                       </td>
 
                       {/* Update dropdown + resolution */}
@@ -356,10 +422,32 @@ const AdminDashboard = () => {
                           rows={2}
                           className="mt-2 w-full bg-gray-900 border border-gray-600 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500"
                         />
+                        
+                        <div className="mt-2">
+                          <input 
+                            type="file" 
+                            id={`file-${c._id}`} 
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={e => {
+                              if(e.target.files && e.target.files[0]) {
+                                setImageMap(prev => ({ ...prev, [c._id]: e.target.files[0] }));
+                              }
+                            }}
+                          />
+                          <label 
+                            htmlFor={`file-${c._id}`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-dashed cursor-pointer transition-colors w-fit ${imageMap[c._id] ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400' : 'bg-gray-800 border-gray-600 text-gray-400 hover:text-white hover:bg-gray-700'}`}
+                          >
+                            {imageMap[c._id] ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Upload className="w-3.5 h-3.5" />}
+                            {imageMap[c._id] ? 'Photo Selected' : 'Upload Photo'}
+                          </label>
+                        </div>
+
                         <button
                           onClick={() => handleStatusUpdate(c)}
                           disabled={updatingId === c._id}
-                          className="mt-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                          className="mt-3 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 px-4 py-1.5 rounded-lg text-xs font-semibold w-full flex justify-center"
                         >
                           Save Action
                         </button>
