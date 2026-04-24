@@ -395,7 +395,7 @@ const SubmitComplaint = () => {
                 formData={formData}
                 handleChange={handleChange}
                 shakeField={shakeField}
-                placeholder="Jane Doe"
+                placeholder="Enter full name"
                 autoComplete="name"
                 inputRef={nameInputRef}
                 onKeyDown={(e) => {
@@ -412,7 +412,7 @@ const SubmitComplaint = () => {
                 formData={formData}
                 handleChange={handleChange}
                 shakeField={shakeField}
-                placeholder="jane@example.com"
+                placeholder="Enter email address"
                 autoComplete="email"
                 inputRef={contactInputRef}
               />
@@ -423,7 +423,7 @@ const SubmitComplaint = () => {
                 formData={formData}
                 handleChange={handleChange}
                 shakeField={shakeField}
-                placeholder="+1 234 567 8900"
+                placeholder="Enter phone number"
                 autoComplete="tel"
               />
             </div>
@@ -435,14 +435,65 @@ const SubmitComplaint = () => {
               <FileText className="w-4 h-4 text-blue-400" /> Complaint Details
             </div>
 
-            <Field
-              name="title"
-              label="Title *"
-              formData={formData}
-              handleChange={handleChange}
-              shakeField={shakeField}
-              placeholder="E.g., Large pothole on Main St"
-            />
+            {/* Title field with inline AI enhancer */}
+            <motion.div animate={shakeField === 'title' ? 'shake' : 'idle'} variants={shakeVariants}>
+              <label htmlFor="title" className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 cursor-text">
+                Title *
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  id="title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  placeholder="Enter title"
+                  className="w-full bg-gray-900 border border-gray-600 rounded-2xl pl-5 pr-14 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all font-medium"
+                />
+                <motion.button
+                  type="button"
+                  onClick={async () => {
+                    if (!formData.title.trim()) {
+                      toast.error('Enter a title first — AI will elaborate and fill the form.');
+                      return;
+                    }
+                    setChatInput(formData.title.trim());
+                    setChatLoading(true);
+                    try {
+                      const res = await parseChatMessage(formData.title.trim());
+                      if (res.success) {
+                        const parsed = res.data;
+                        setFormData((prev) => ({
+                          ...prev,
+                          description: parsed.description || prev.description,
+                          location: parsed.location || prev.location,
+                        }));
+                        setChatParsed(parsed);
+                        setChatReply(parsed.botReply);
+                        toast.success('✨ AI elaborated your title and filled the form!');
+                      }
+                    } catch (err) {
+                      toast.error(err.response?.data?.error || 'AI enhance failed');
+                    } finally {
+                      setChatLoading(false);
+                    }
+                  }}
+                  title="AI Enhancer — auto-fill form from title"
+                  whileHover={{ scale: 1.12 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="absolute right-3 flex items-center justify-center w-8 h-8 rounded-xl bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30 hover:border-cyan-400 transition-all"
+                >
+                  {chatLoading
+                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    : <Sparkles className="w-3.5 h-3.5" />}
+                </motion.button>
+              </div>
+              {chatParsed && (
+                <div className="flex items-center gap-2 mt-2">
+                  <Sparkles className="w-3 h-3 text-cyan-400" />
+                  <span className="text-xs text-cyan-400 font-medium">AI filled description &amp; location from your title</span>
+                </div>
+              )}
+            </motion.div>
 
             {/* Description + live category */}
             <div>
@@ -450,7 +501,7 @@ const SubmitComplaint = () => {
               <motion.div animate={shakeField === 'description' ? 'shake' : 'idle'} variants={shakeVariants}>
                 <textarea
                   name="description" value={formData.description} onChange={handleChange} rows={4}
-                  placeholder="Describe the issue. AI will detect category and check for duplicates…"
+                  placeholder="Enter description. AI will detect category and check for duplicates…"
                   className="w-full bg-gray-900 border border-gray-600 rounded-2xl px-5 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none font-medium"
                 />
               </motion.div>
@@ -479,7 +530,7 @@ const SubmitComplaint = () => {
               formData={formData}
               handleChange={handleChange}
               shakeField={shakeField}
-              placeholder="Exact address or landmark"
+              placeholder="Enter location"
             />
 
             {/* GPS Location */}

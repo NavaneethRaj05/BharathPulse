@@ -149,10 +149,6 @@ const Home = () => {
               <div className="space-y-3">
                 <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-[1.05]">
                   <span className="text-white">CivicPulse</span>
-                  <br />
-                  <span className="bg-gradient-to-r from-emerald-300 via-cyan-300 to-blue-400 bg-clip-text text-transparent">
-                    Smart City Hub
-                  </span>
                 </h1>
                 <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed font-medium">
                   Report civic issues, track real-time resolution, and hold authorities accountable — all powered by AI.
