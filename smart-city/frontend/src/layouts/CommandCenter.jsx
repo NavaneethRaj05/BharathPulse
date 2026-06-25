@@ -8,6 +8,8 @@ import RightPanel from '../components/panels/RightPanel';
 import BottomBar from '../components/panels/BottomBar';
 import LeafletMap from '../components/map/LeafletMap';
 import WardDetailPanel from '../components/panels/WardDetailPanel';
+import ThreeGlobe from '../components/map/ThreeGlobe';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export const CommandCenter = () => {
   const { filters, setFilter } = useFilters();
@@ -23,6 +25,7 @@ export const CommandCenter = () => {
   } = useMapData(filters);
 
   // States
+  const [viewMode, setViewMode] = useState('globe'); // 'globe' | 'map'
   const [activeTab, setActiveTab] = useState('map'); // 'map' | 'operations' | 'ai'
   const [mode, setMode] = useState('none'); // 'none' | 'submit' | 'complaint' | 'ward'
   const [selectedWard, setSelectedWard] = useState(null);
@@ -177,8 +180,7 @@ export const CommandCenter = () => {
 
   const handleResetView = useCallback(() => {
     if (filters.level === 'NATIONAL') {
-      setMapCenter([20.5937, 78.9629]);
-      setMapZoom(4);
+      setViewMode('globe');
     } else if (filters.level === 'STATE') {
       setMapCenter([15.3173, 75.7139]);
       setMapZoom(7);
@@ -187,7 +189,7 @@ export const CommandCenter = () => {
       setMapZoom(12);
     }
     setMapBounds(null);
-  }, [filters.level]);
+  }, [filters.level, setViewMode]);
 
   const toggleLayer = useCallback((layerName) => {
     setActiveLayers((prev) => ({
@@ -205,121 +207,164 @@ export const CommandCenter = () => {
   return (
     <div className="h-screen w-screen flex flex-col bg-[#050816] text-slate-100 overflow-hidden relative">
       {/* Top Navigation */}
-      <TopBar
-        stats={stats}
-        filters={filters}
-        setFilter={setFilter}
-        activeLayers={activeLayers}
-        toggleLayer={toggleLayer}
-        isDarkMode={isDarkMode}
-        setIsDarkMode={setIsDarkMode}
-        onStartReporting={handleStartReporting}
-        isPickingLocation={isPickingLocation}
-      />
+      {viewMode === 'map' && (
+        <TopBar
+          stats={stats}
+          filters={filters}
+          setFilter={setFilter}
+          activeLayers={activeLayers}
+          toggleLayer={toggleLayer}
+          isDarkMode={isDarkMode}
+          setIsDarkMode={setIsDarkMode}
+          onStartReporting={handleStartReporting}
+          isPickingLocation={isPickingLocation}
+        />
+      )}
 
       {/* Main Content Workspace */}
       <div className="flex-1 flex overflow-hidden relative">
         {/* Left Side: Filter desk + Wards list - Wrapped with responsive overlay rules */}
-        <div className={`md:flex ${activeTab === 'operations' ? 'flex absolute inset-0 z-[1002] w-full bg-[#050816]/95 backdrop-blur-md' : 'hidden'} md:relative md:bg-transparent`}>
-          <LeftPanel
-            wards={wards}
-            complaints={complaints}
-            filters={filters}
-            setFilter={setFilter}
-            onWardClick={handleWardClick}
-            selectedWardId={selectedWard?.id}
-            onBack={handleBack}
-            onDrillDown={handleDrillDown}
-          />
-        </div>
+        {viewMode === 'map' && (
+          <div className={`md:flex ${activeTab === 'operations' ? 'flex absolute inset-0 z-[1002] w-full bg-[#050816]/95 backdrop-blur-md' : 'hidden'} md:relative md:bg-transparent`}>
+            <LeftPanel
+              wards={wards}
+              complaints={complaints}
+              filters={filters}
+              setFilter={setFilter}
+              onWardClick={handleWardClick}
+              selectedWardId={selectedWard?.id}
+              onBack={handleBack}
+              onDrillDown={handleDrillDown}
+            />
+          </div>
+        )}
 
-        {/* Center Canvas: Interactive Map */}
+        {/* Center Canvas: Interactive Map or 3D Satellite Globe */}
         <div className="flex-1 h-full relative bg-slate-950">
-          <LeafletMap
-            wards={wards}
-            complaints={complaints}
-            activeLayers={activeLayers}
-            isPickingLocation={isPickingLocation}
-            onLocationPicked={handleLocationPicked}
-            pickedLocation={pickedLocation}
-            center={mapCenter}
-            zoom={mapZoom}
-            bounds={mapBounds}
-            onWardClick={handleWardClick}
-            onComplaintClick={handleComplaintClick}
-            selectedWardId={selectedWard?.id}
-            selectedComplaintId={selectedComplaintId}
-            onResetView={handleResetView}
-            isDarkMode={isDarkMode}
-          />
-          {mode === 'ward' && selectedWard && (
-            <div className="absolute right-4 top-4 z-[999] w-80 max-h-[75vh] md:max-h-[85vh] bg-[#0F172A]/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl overflow-y-auto no-scrollbar glow-primary flex flex-col">
-              <WardDetailPanel
-                ward={selectedWard}
-                onClose={handleClosePanel}
-                onComplaintClick={handleComplaintClick}
-              />
-            </div>
-          )}
+          <AnimatePresence mode="wait">
+            {viewMode === 'globe' ? (
+              <motion.div
+                key="globe"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.5 }}
+                className="w-full h-full"
+              >
+                <ThreeGlobe
+                  onExploreLocation={(lat, lng) => {
+                    setMapCenter([lat, lng]);
+                    setMapZoom(12);
+                    setMapBounds(null);
+                    setViewMode('map');
+                  }}
+                  onEnterMapDirectly={() => setViewMode('map')}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="map"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.5 }}
+                className="w-full h-full relative"
+              >
+                <LeafletMap
+                  wards={wards}
+                  complaints={complaints}
+                  activeLayers={activeLayers}
+                  isPickingLocation={isPickingLocation}
+                  onLocationPicked={handleLocationPicked}
+                  pickedLocation={pickedLocation}
+                  center={mapCenter}
+                  zoom={mapZoom}
+                  bounds={mapBounds}
+                  onWardClick={handleWardClick}
+                  onComplaintClick={handleComplaintClick}
+                  selectedWardId={selectedWard?.id}
+                  selectedComplaintId={selectedComplaintId}
+                  onResetView={handleResetView}
+                  isDarkMode={isDarkMode}
+                  onZoomOutToGlobe={() => setViewMode('globe')}
+                />
+                {mode === 'ward' && selectedWard && (
+                  <div className="absolute right-4 top-4 z-[999] w-80 max-h-[75vh] md:max-h-[85vh] bg-[#0F172A]/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl overflow-y-auto no-scrollbar glow-primary flex flex-col">
+                    <WardDetailPanel
+                      ward={selectedWard}
+                      onClose={handleClosePanel}
+                      onComplaintClick={handleComplaintClick}
+                    />
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Right Side: Details panel slides - Wrapped with responsive overlay rules */}
-        <div className={`md:flex ${activeTab === 'ai' ? 'flex absolute inset-0 z-[1002] w-full bg-[#050816]/95 backdrop-blur-md' : 'hidden'} md:relative md:bg-transparent`}>
-          <RightPanel
-            mode={mode}
-            selectedWard={selectedWard}
-            selectedComplaintId={selectedComplaintId}
-            pickedLocation={pickedLocation}
-            isPickingLocation={isPickingLocation}
-            setIsPickingLocation={setIsPickingLocation}
-            onResetLocation={handleResetLocation}
-            refreshMapData={refreshData}
-            onFocusCoordinates={handleFocusCoordinates}
-            onClosePanel={handleClosePanel}
-            onComplaintClick={handleComplaintClick}
-            wards={wards}
-            complaints={complaints}
-            stats={stats}
-            filters={filters}
-          />
-        </div>
+        {viewMode === 'map' && (
+          <div className={`md:flex ${activeTab === 'ai' ? 'flex absolute inset-0 z-[1002] w-full bg-[#050816]/95 backdrop-blur-md' : 'hidden'} md:relative md:bg-transparent`}>
+            <RightPanel
+              mode={mode}
+              selectedWard={selectedWard}
+              selectedComplaintId={selectedComplaintId}
+              pickedLocation={pickedLocation}
+              isPickingLocation={isPickingLocation}
+              setIsPickingLocation={setIsPickingLocation}
+              onResetLocation={handleResetLocation}
+              refreshMapData={refreshData}
+              onFocusCoordinates={handleFocusCoordinates}
+              onClosePanel={handleClosePanel}
+              onComplaintClick={handleComplaintClick}
+              wards={wards}
+              complaints={complaints}
+              stats={stats}
+              filters={filters}
+            />
+          </div>
+        )}
       </div>
 
       {/* Bottom Bar: Horizontal ticker feed - Hidden on mobile to avoid layout crowding */}
-      <div className="hidden md:block shrink-0">
-        <BottomBar feedEvents={feedEvents} onEventClick={handleEventClick} />
-      </div>
+      {viewMode === 'map' && (
+        <div className="hidden md:block shrink-0">
+          <BottomBar feedEvents={feedEvents} onEventClick={handleEventClick} />
+        </div>
+      )}
 
       {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden flex h-14 w-full bg-[#0F172A]/90 border-t border-white/10 backdrop-blur-lg items-center justify-around z-[1003] shrink-0 select-none pb-safe">
-        <button 
-          onClick={() => setActiveTab('map')}
-          className={`flex flex-col items-center justify-center gap-0.5 text-[9px] font-black uppercase tracking-wider transition-colors cursor-pointer ${
-            activeTab === 'map' ? 'text-[#5B8CFF] text-glow-primary' : 'text-slate-400'
-          }`}
-        >
-          <span className="text-sm">🗺️</span>
-          <span>Map HUD</span>
-        </button>
-        <button 
-          onClick={() => setActiveTab('operations')}
-          className={`flex flex-col items-center justify-center gap-0.5 text-[9px] font-black uppercase tracking-wider transition-colors cursor-pointer ${
-            activeTab === 'operations' ? 'text-[#5B8CFF] text-glow-primary' : 'text-slate-400'
-          }`}
-        >
-          <span className="text-sm">📋</span>
-          <span>Console</span>
-        </button>
-        <button 
-          onClick={() => setActiveTab('ai')}
-          className={`flex flex-col items-center justify-center gap-0.5 text-[9px] font-black uppercase tracking-wider transition-colors cursor-pointer ${
-            activeTab === 'ai' ? 'text-[#5B8CFF] text-glow-primary' : 'text-slate-400'
-          }`}
-        >
-          <span className="text-sm">🤖</span>
-          <span>AI Advisory</span>
-        </button>
-      </div>
+      {viewMode === 'map' && (
+        <div className="md:hidden flex h-14 w-full bg-[#0F172A]/90 border-t border-white/10 backdrop-blur-lg items-center justify-around z-[1003] shrink-0 select-none pb-safe">
+          <button 
+            onClick={() => setActiveTab('map')}
+            className={`flex flex-col items-center justify-center gap-0.5 text-[9px] font-black uppercase tracking-wider transition-colors cursor-pointer ${
+              activeTab === 'map' ? 'text-[#5B8CFF] text-glow-primary' : 'text-slate-400'
+            }`}
+          >
+            <span className="text-sm">🗺️</span>
+            <span>Map HUD</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('operations')}
+            className={`flex flex-col items-center justify-center gap-0.5 text-[9px] font-black uppercase tracking-wider transition-colors cursor-pointer ${
+              activeTab === 'operations' ? 'text-[#5B8CFF] text-glow-primary' : 'text-slate-400'
+            }`}
+          >
+            <span className="text-sm">📋</span>
+            <span>Console</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('ai')}
+            className={`flex flex-col items-center justify-center gap-0.5 text-[9px] font-black uppercase tracking-wider transition-colors cursor-pointer ${
+              activeTab === 'ai' ? 'text-[#5B8CFF] text-glow-primary' : 'text-slate-400'
+            }`}
+          >
+            <span className="text-sm">🤖</span>
+            <span>AI Advisory</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,7 +1,7 @@
 export const MAP_CONFIG = {
-  center: [12.9716, 77.5946], // Bengaluru center
-  zoom: 12,
-  minZoom: 10,
+  center: [20.5937, 78.9629], // India National Center
+  zoom: 4,
+  minZoom: 2,
   maxZoom: 18,
   tileUrl: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
   lightTileUrl: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',

@@ -254,3 +254,12 @@ input[type="range"] {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Pseudo-3D Oblique Tilt Perspective for Leaflet */
+.map-tilted .leaflet-map-pane {
+  transform: perspective(1000px) rotateX(24deg) translateY(-20px);
+  transform-origin: center bottom;
+}
+.leaflet-map-pane {
+  transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
