@@ -19,16 +19,16 @@ const Home = () => {
               Connecting Citizens to a Prosperous City
             </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#1e3a5f] leading-tight mb-6">
-              CIVICPULSE COMPLAINT MANAGEMENT PORTAL
+              BHARATHPULSE COMPLAINT MANAGEMENT PORTAL
             </h1>
             <p className="text-gray-600 mb-8 text-sm md:text-base leading-relaxed">
-              The mission of CivicPulse is to advance public safety, general prosperity, and long-term vitality of our residents by targeting civic issues and other assistance to foster a better environment and attraction of new business and the retention of existing business.
+              The mission of BharathPulse is to advance public safety, general prosperity, and long-term vitality of our residents by targeting civic issues and other assistance to foster a better environment and attraction of new business and the retention of existing business.
             </p>
             <button 
               onClick={() => navigate('/about')}
               className="bg-[#f5a623] hover:bg-[#e09612] text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all"
             >
-              Learn More About CivicPulse
+              Learn More About BharathPulse
             </button>
           </div>
           <div className="flex flex-col gap-4">
@@ -53,7 +53,7 @@ const Home = () => {
           {/* Left Text */}
           <div>
             <h2 className="text-3xl md:text-4xl font-bold text-[#1e3a5f] mb-6 leading-tight">
-              Join us For a Safer and Cleaner Environment with CivicPulse
+              Join us For a Safer and Cleaner Environment with BharathPulse
             </h2>
             <div className="space-y-4 mb-8">
               <p className="text-sm text-gray-700 font-semibold flex items-center gap-2">
@@ -64,7 +64,7 @@ const Home = () => {
               </p>
             </div>
             <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-              Join the <strong>CivicPulse Issue Resolution Portal</strong> for an engaging and informative way to report issues that impact our community. Hear from leaders and citizens representing diverse roles across the city as they discuss important topics that support economic growth, job creation, and revitalization efforts.
+              Join the <strong>BharathPulse Issue Resolution Portal</strong> for an engaging and informative way to report issues that impact our community. Hear from leaders and citizens representing diverse roles across the city as they discuss important topics that support economic growth, job creation, and revitalization efforts.
             </p>
             <p className="text-gray-600 text-sm leading-relaxed">
               Whether you're a business owner, resident, or community leader, this platform offers valuable insight into the strategies shaping our region's future.
@@ -120,10 +120,10 @@ const Home = () => {
               Who We Are
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-[#1e3a5f] mb-6 leading-tight">
-              About The CivicPulse Development Agency
+              About The BharathPulse Development Agency
             </h2>
             <p className="text-gray-600 text-sm mb-6 leading-relaxed font-semibold">
-              The mission of the CivicPulse Agency is to advance the job opportunities, general prosperity and long-term economic vitality of our residents by targeting civic improvements and other assistance to foster creation and attraction of new business.
+              The mission of the BharathPulse Agency is to advance the job opportunities, general prosperity and long-term economic vitality of our residents by targeting civic improvements and other assistance to foster creation and attraction of new business.
             </p>
             <p className="text-gray-600 text-sm mb-8 leading-relaxed">
               We focus on ensuring that our communities remain safe, engaging, and robust. By targeting resources toward repairing infrastructure, supporting local initiatives, and empowering citizens to speak up, we build a foundation for long-term growth and success.

@@ -1,0 +1,115 @@
+{
+  "states": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "STATE_KA",
+        "name": "Karnataka",
+        "code": "KA",
+        "level": "STATE"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[74.0, 11.5], [78.5, 11.5], [78.5, 18.5], [74.0, 18.5], [74.0, 11.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "STATE_MH",
+        "name": "Maharashtra",
+        "code": "MH",
+        "level": "STATE"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[72.5, 15.5], [80.5, 15.5], [80.5, 22.0], [72.5, 22.0], [72.5, 15.5]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "STATE_DL",
+        "name": "Delhi",
+        "code": "DL",
+        "level": "STATE"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[76.8, 28.4], [77.5, 28.4], [77.5, 28.9], [76.8, 28.9], [76.8, 28.4]]]
+      }
+    }
+  ],
+  "districts": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "DIST_BGL_URBAN",
+        "name": "Bengaluru Urban",
+        "code": "BLR",
+        "stateCode": "KA",
+        "level": "DISTRICT"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[77.3, 12.7], [77.8, 12.7], [77.8, 13.2], [77.3, 13.2], [77.3, 12.7]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "DIST_MYSURU",
+        "name": "Mysuru",
+        "code": "MYS",
+        "stateCode": "KA",
+        "level": "DISTRICT"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[76.2, 12.0], [76.9, 12.0], [76.9, 12.6], [76.2, 12.6], [76.2, 12.0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "DIST_MUMBAI",
+        "name": "Mumbai City",
+        "code": "MUM",
+        "stateCode": "MH",
+        "level": "DISTRICT"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[72.7, 18.8], [73.0, 18.8], [73.0, 19.3], [72.7, 19.3], [72.7, 18.8]]]
+      }
+    }
+  ],
+  "localBodies": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "BBMP",
+        "name": "Bruhat Bengaluru Mahanagara Palike",
+        "districtCode": "BLR",
+        "level": "LOCAL_BODY"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[77.4, 12.8], [77.75, 12.8], [77.75, 13.15], [77.4, 13.15], [77.4, 12.8]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "MCC",
+        "name": "Mysuru City Corporation",
+        "districtCode": "MYS",
+        "level": "LOCAL_BODY"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[76.45, 12.15], [76.75, 12.15], [76.75, 12.45], [76.45, 12.45], [76.45, 12.15]]]
+      }
+    }
+  ]
+}

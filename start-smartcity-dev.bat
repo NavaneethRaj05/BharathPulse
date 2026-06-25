@@ -13,8 +13,8 @@ if not exist "%ROOT%\backend\package.json" (
   exit /b 1
 )
 
-start "CivicPulse Frontend" cmd /k "cd /d "%ROOT%\frontend" && npm.cmd run dev"
-start "CivicPulse Backend" cmd /k "cd /d "%ROOT%\backend" && npm.cmd run dev"
+start "BharathPulse Frontend" cmd /k "cd /d "%ROOT%\frontend" && npm.cmd run dev"
+start "BharathPulse Backend" cmd /k "cd /d "%ROOT%\backend" && npm.cmd run dev"
 
 echo Started frontend and backend terminals.
 echo Frontend: http://localhost:5173

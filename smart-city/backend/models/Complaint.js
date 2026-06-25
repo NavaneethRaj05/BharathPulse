@@ -111,6 +111,39 @@ const complaintSchema = new mongoose.Schema(
       min: -180,
       max: 180,
     },
+    coordinates: {
+      type: { type: String, enum: ['Point'], default: 'Point' },
+      coordinates: { type: [Number], default: undefined } // [longitude, latitude]
+    },
+    tenantCode: {
+      type: String,
+      default: 'BBMP',
+      index: true,
+    },
+    hierarchy: {
+      state: { type: String, default: 'KA' },
+      district: { type: String, default: 'Bengaluru Urban' },
+      localBody: { type: String, default: 'BBMP' },
+      zone: { type: String, default: 'South' },
+      ward: { type: String, default: 'Koramangala' },
+      wardId: { type: String, default: 'ward-150' },
+    },
+    sla: {
+      maxHours: { type: Number, default: 24 },
+      dueAt: { type: Date, default: null },
+      isBreached: { type: Boolean, default: false },
+    },
+    workflowStep: {
+      type: String,
+      default: 'WARD_AUDIT',
+      enum: ['CITIZEN_SUBMIT', 'AI_VERIFICATION', 'WARD_AUDIT', 'WORK_ALLOCATED', 'FIELD_INSPECTION', 'DEPT_QA', 'CITIZEN_VERIFY', 'CLOSED'],
+    },
+    ward: {
+      id: { type: String, default: '' },
+      name: { type: String, default: '' },
+      number: { type: String, default: '' },
+    },
+    zone: { type: String, default: '' },
 
     // ── Citizen Feedback & Rating ─────────────────────────────────
     feedback: {
@@ -192,5 +225,7 @@ const complaintSchema = new mongoose.Schema(
 complaintSchema.index({ createdAt: -1 });
 // Index for clustering lookups
 complaintSchema.index({ category: 1, status: 1 });
+// Geo index for coordinates
+complaintSchema.index({ coordinates: '2dsphere' });
 
 module.exports = mongoose.model('Complaint', complaintSchema);

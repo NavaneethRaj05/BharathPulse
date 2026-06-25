@@ -1,19 +1,19 @@
 {
-  "name": "civicpulse",
+  "name": "bharathpulse",
   "version": "1.0.0",
-  "description": "CivicPulse - AI-powered civic issue resolution system",
+  "description": "BharathPulse - AI-powered civic issue resolution system",
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "cd backend && npm start",
-    "dev:frontend": "cd frontend && npm run dev",
-    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
-    "build": "cd frontend && npm run build",
+    "dev:backend": "cd smart-city/backend && npm start",
+    "dev:frontend": "cd smart-city/frontend && npm run dev",
+    "install:all": "npm install && cd smart-city/backend && npm install && cd ../frontend && npm install",
+    "build": "cd smart-city/frontend && npm run build",
     "start": "npm run dev:backend"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
   },
   "keywords": ["civic", "complaints", "ai", "resolution"],
-  "author": "CivicPulse Team",
+  "author": "BharathPulse Team",
   "license": "MIT"
 }

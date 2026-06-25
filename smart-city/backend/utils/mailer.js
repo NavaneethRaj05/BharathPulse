@@ -30,13 +30,13 @@ const sendStatusUpdateEmail = async (to, complaint, newStatus) => {
   }
 
   const mailOptions = {
-    from: `"CivicPulse" <${process.env.GMAIL_USER}>`,
+    from: `"BharathPulse" <${process.env.GMAIL_USER}>`,
     to: to,
-    subject: `CivicPulse: Your complaint status has been updated to ${newStatus}`,
+    subject: `BharathPulse: Your complaint status has been updated to ${newStatus}`,
     html: `
       <div style="font-family: sans-serif; max-w: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
         <div style="background-color: #1f2937; padding: 20px; text-align: center;">
-          <h2 style="color: #3b82f6; margin: 0;">CivicPulse Update</h2>
+          <h2 style="color: #3b82f6; margin: 0;">BharathPulse Update</h2>
         </div>
         <div style="padding: 30px; background-color: #f9fafb;">
           <p style="font-size: 16px; color: #374151;">Hello,</p>
@@ -49,11 +49,11 @@ const sendStatusUpdateEmail = async (to, complaint, newStatus) => {
             ${complaint.resolution ? `<p style="margin: 10px 0 0 0; font-size: 15px;"><strong>Resolution Note:</strong> ${complaint.resolution}</p>` : ''}
           </div>
           <p style="font-size: 16px; color: #374151;">
-            You can track your complaint at any time using your Complaint ID on the <a href="http://localhost:5173/track" style="color: #3b82f6; text-decoration: none;">CivicPulse portal</a>.
+            You can track your complaint at any time using your Complaint ID on the <a href="http://localhost:5173/track" style="color: #3b82f6; text-decoration: none;">BharathPulse portal</a>.
           </p>
           <p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
             Thank you for helping us improve our city!
-            <br/>— The CivicPulse Team
+            <br/>— The BharathPulse Team
           </p>
         </div>
       </div>

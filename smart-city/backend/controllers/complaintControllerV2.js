@@ -9,6 +9,9 @@ const {
 const { hasCloudinary } = require('../config/cloudinary');
 const { sendStatusNotification } = require('../utils/notificationService');
 const { sendStatusUpdateEmail } = require('../utils/mailer');
+const { detectWard } = require('../utils/geoUtils');
+const Tenant = require('../models/Tenant');
+const AuditLog = require('../models/AuditLog');
 
 const DEPARTMENT_MAPPING = {
   Sanitation: 'Public Health & Sanitation Department',
@@ -29,6 +32,32 @@ const setSocket = (io) => {
 const emitComplaintUpdate = (complaint) => {
   if (!ioRef) return;
   ioRef.to(`complaint:${complaint._id}`).emit('complaint:update', complaint);
+  ioRef.emit('map:complaint:updated', complaint);
+  
+  if (complaint.status === 'Resolved') {
+    ioRef.emit('map:complaint:resolved', complaint);
+  }
+  
+  // Also emit feed event
+  let eventType = 'updated';
+  if (complaint.isEscalated) eventType = 'escalated';
+  else if (complaint.status === 'Resolved') eventType = 'resolved';
+  else if (complaint.status === 'In Progress') eventType = 'in_progress';
+  
+  ioRef.emit('feed:event', {
+    id: complaint._id,
+    code: complaint.complaintCode,
+    title: complaint.title,
+    category: complaint.category,
+    status: complaint.status,
+    location: complaint.location,
+    ward: complaint.ward || null,
+    type: eventType,
+    timestamp: complaint.updatedAt || new Date(),
+    note: complaint.statusHistory && complaint.statusHistory.length > 0
+      ? complaint.statusHistory[complaint.statusHistory.length - 1].note
+      : `Status updated to ${complaint.status}`,
+  });
 };
 
 const makeComplaintCode = () => `CP-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
@@ -116,6 +145,20 @@ const createComplaint = async (req, res) => {
       });
     }
 
+    let detectedWardInfo = null;
+    const latNum = latitude != null ? parseFloat(latitude) : null;
+    const lngNum = longitude != null ? parseFloat(longitude) : null;
+    if (latNum != null && !isNaN(latNum) && lngNum != null && !isNaN(lngNum)) {
+      detectedWardInfo = detectWard(latNum, lngNum);
+    }
+
+    const tenantCode = req.tenantCode || 'BBMP';
+    // Access Map or dynamic JS object rules
+    const slaHours = req.tenant?.slaRules instanceof Map 
+      ? (req.tenant.slaRules.get(category) || 24)
+      : (req.tenant?.slaRules?.[category] || 24);
+    const dueAt = new Date(Date.now() + slaHours * 3600000);
+
     const complaintData = {
       complaintCode: makeComplaintCode(),
       title,
@@ -127,8 +170,32 @@ const createComplaint = async (req, res) => {
       mlScores: scores,
       reporters: [{ name: reporterName, contact: reporterContact, reportedAt: new Date() }],
       reportCount: 1,
-      latitude: latitude || null,
-      longitude: longitude || null,
+      latitude: latNum && !isNaN(latNum) ? latNum : null,
+      longitude: lngNum && !isNaN(lngNum) ? lngNum : null,
+      coordinates: latNum && lngNum && !isNaN(latNum) && !isNaN(lngNum)
+        ? { type: 'Point', coordinates: [lngNum, latNum] }
+        : undefined,
+      tenantCode,
+      hierarchy: {
+        state: 'KA',
+        district: 'Bengaluru Urban',
+        localBody: tenantCode,
+        zone: detectedWardInfo ? detectedWardInfo.zone : 'South',
+        ward: detectedWardInfo ? detectedWardInfo.name : '',
+        wardId: detectedWardInfo ? detectedWardInfo.id : '',
+      },
+      sla: {
+        maxHours: slaHours,
+        dueAt: dueAt,
+        isBreached: false,
+      },
+      workflowStep: 'WARD_AUDIT',
+      ward: detectedWardInfo ? {
+        id: detectedWardInfo.id,
+        name: detectedWardInfo.name,
+        number: detectedWardInfo.number,
+      } : { id: '', name: '', number: '' },
+      zone: detectedWardInfo ? detectedWardInfo.zone : '',
       assignedDept: DEPARTMENT_MAPPING[category] || DEPARTMENT_MAPPING.General,
       isFake: fakeCheck.isFake,
       suspicionScore: fakeCheck.score,
@@ -148,6 +215,33 @@ const createComplaint = async (req, res) => {
           inMemoryComplaints.unshift(memoryComplaint);
           return memoryComplaint;
         })();
+
+    if (isDbConnected()) {
+      await AuditLog.create({
+        tenantCode,
+        complaintId: complaint._id,
+        actor: { name: reporterName, role: 'Citizen' },
+        action: 'SUBMITTED',
+        description: 'Complaint registered by citizen and pending ward audit',
+        gps: latNum && lngNum ? { latitude: latNum, longitude: lngNum } : undefined,
+      });
+    }
+
+    if (ioRef) {
+      ioRef.emit('map:complaint:new', complaint);
+      ioRef.emit('feed:event', {
+        id: complaint._id,
+        code: complaint.complaintCode,
+        title: complaint.title,
+        category: complaint.category,
+        status: complaint.status,
+        location: complaint.location,
+        ward: complaint.ward || null,
+        type: 'created',
+        timestamp: complaint.createdAt || new Date(),
+        note: 'Complaint registered',
+      });
+    }
 
     emitComplaintUpdate(complaint);
     return res.status(201).json({ success: true, isDuplicate: false, data: complaint, message: 'Complaint submitted successfully.' });
@@ -262,8 +356,30 @@ const updateComplaintStatus = async (req, res) => {
     if (resolution) complaint.resolution = resolution;
     if (status === 'Resolved') complaint.resolutionDate = new Date();
     complaint.statusHistory.push({ status, note: resolution || `Status changed to ${status}`, changedBy });
+
+    // Progress NammaKasa Workflow Step
+    let auditAction = 'WORK_STARTED';
+    let auditDesc = `Status updated to ${status} by ${changedBy}`;
+
+    if (status === 'In Progress') {
+      complaint.workflowStep = 'WORK_ALLOCATED';
+      auditAction = 'ASSIGNED';
+      auditDesc = 'Work order approved and assigned to field response unit';
+    } else if (status === 'Resolved') {
+      complaint.workflowStep = 'DEPT_QA';
+      auditAction = 'RESOLVED';
+      auditDesc = 'Resolution completed on-site, pending department validation';
+    }
+
     if (isDbConnected()) {
       await complaint.save();
+      await AuditLog.create({
+        tenantCode: complaint.tenantCode || 'BBMP',
+        complaintId: complaint._id,
+        actor: { name: changedBy, role: changedBy === 'system' ? 'system' : 'Officer' },
+        action: auditAction,
+        description: auditDesc,
+      });
     } else {
       complaint.updatedAt = new Date();
     }
@@ -363,13 +479,80 @@ const escalateComplaint = async (req, res) => {
     complaint.escalationReason = reason || 'No reason provided';
     complaint.statusHistory.push({ status: complaint.status, note: `Escalated to Higher Authority: ${complaint.escalationReason}`, changedBy: 'citizen', changedAt: new Date() });
     
-    if (isDbConnected()) await complaint.save();
+    if (isDbConnected()) {
+      await complaint.save();
+      await AuditLog.create({
+        tenantCode: complaint.tenantCode || 'BBMP',
+        complaintId: complaint._id,
+        actor: { name: 'Citizen', role: 'Citizen' },
+        action: 'ESCALATED',
+        description: `Grievance escalated due to: ${complaint.escalationReason}`,
+      });
+    } else {
+      complaint.updatedAt = new Date();
+    }
     
     emitComplaintUpdate(complaint);
     return res.status(200).json({ success: true, message: 'Complaint escalated successfully', data: complaint });
   } catch (error) {
     return res.status(500).json({ success: false, error: error.message });
   }
+};
+
+const startSlaChecker = () => {
+  setInterval(async () => {
+    try {
+      const now = new Date();
+      if (!isDbConnected()) {
+        inMemoryComplaints.forEach((c) => {
+          if (c.status !== 'Resolved' && !c.isEscalated && c.sla && c.sla.dueAt && new Date(c.sla.dueAt) < now) {
+            c.isEscalated = true;
+            if (c.sla) c.sla.isBreached = true;
+            c.escalationReason = 'Automated Escalation: SLA target breached.';
+            c.statusHistory.push({
+              status: c.status,
+              note: 'Automated Escalation: SLA target breached.',
+              changedBy: 'system',
+              changedAt: now,
+            });
+            emitComplaintUpdate(c);
+          }
+        });
+        return;
+      }
+
+      const breachedComplaints = await Complaint.find({
+        status: { $ne: 'Resolved' },
+        isEscalated: false,
+        'sla.dueAt': { $lt: now },
+      });
+
+      for (const complaint of breachedComplaints) {
+        complaint.isEscalated = true;
+        complaint.sla.isBreached = true;
+        complaint.escalationReason = 'Automated Escalation: SLA target breached.';
+        complaint.statusHistory.push({
+          status: complaint.status,
+          note: 'Automated Escalation: SLA target breached.',
+          changedBy: 'system',
+          changedAt: now,
+        });
+        await complaint.save();
+
+        await AuditLog.create({
+          tenantCode: complaint.tenantCode || 'BBMP',
+          complaintId: complaint._id,
+          actor: { name: 'system', role: 'system' },
+          action: 'ESCALATED',
+          description: 'Automated Escalation: SLA target breached.',
+        });
+
+        emitComplaintUpdate(complaint);
+      }
+    } catch (e) {
+      console.error('SLA Checker background task error:', e);
+    }
+  }, 10000); // Check every 10 seconds for real-time responsiveness
 };
 
 module.exports = {
@@ -382,4 +565,5 @@ module.exports = {
   escalateComplaint,
   setSocket,
   getLocations,
+  startSlaChecker,
 };

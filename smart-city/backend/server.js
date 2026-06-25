@@ -7,7 +7,9 @@ const multer = require('multer');
 const connectDB = require('./config/db');
 const complaintRoutes = require('./routes/complaintRoutes');
 const chatbotRoutes = require('./routes/chatbotRoutes');
-const { setSocket } = require('./controllers/complaintControllerV2');
+const gisRoutes = require('./routes/gisRoutes');
+const { setSocket, startSlaChecker } = require('./controllers/complaintControllerV2');
+const { tenantIsolation } = require('./middleware/tenant');
 
 dotenv.config();
 
@@ -24,10 +26,12 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(tenantIsolation);
 
 // Routes
 app.use('/api/complaints', complaintRoutes);
 app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/gis', gisRoutes);
 
 io.on('connection', (socket) => {
   socket.on('complaint:join', (complaintId) => {
@@ -39,10 +43,11 @@ io.on('connection', (socket) => {
 });
 
 setSocket(io);
+startSlaChecker();
 
 // Base route
 app.get('/', (req, res) => {
-  res.send('CivicPulse API is running');
+  res.send('BharathPulse API is running');
 });
 
 // Centralized error handler to avoid opaque "Submission failed" on frontend
